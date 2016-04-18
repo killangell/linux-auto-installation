@@ -1,6 +1,7 @@
 #!/bin/sh
 
 source system.sh
+source file.sh
 
 MODULES_DIRX=$1
 
@@ -13,19 +14,33 @@ FATAL=$LEVEL_FATAL
 # Desc:
 function debugx()
 {
-	debug $0 $1 $2
+	debug "$0" "$1" "$2"
+}
+
+function parse_insmod_conf()
+{
+	echo
 }
 
 show_sh_begin_banner $0
 
 debugx $FATAL test
 
-echo $MODULES_DIRX
-all=`ls $MODULES_DIRX`
-#for dir in $(ls $MODULES_DIRX)
-for dir in $all
+for dir in $MODULES_DIRX/*
 do
-    [ -d $dir ] && echo $dir
+    if [ -d $dir ];then
+		debugx $INFO "Enter into folder $dir"
+		cd $dir
+		ls -l
+		
+		is_file_exist insmod.conf result
+		echo insmod.conf-result=$result
+		
+		is_file_exist insmod.sh result
+		echo insmod.sh-result=$result
+		
+		cd ..
+	fi
 done
 
 

@@ -46,8 +46,36 @@ function debug()
 	level=$2
 	info=$3
 	
+	#echo total=$@
+	#echo num=$#
+	#echo $sh_name, $level, "$info"
+	
 	printf "[%-15s] " $sh_name 
-	echo $3
+	echo $info # Must surround $3 with sign " otherwise $3 will be splited by blank space
+}
+
+# in 1: shell script name
+# in 2: level
+# in 3: info
+# Desc:
+function print_proc()
+{
+	sh_name=$1
+	level=$2
+	info=$3
+	
+	printf "[%-15s] " $sh_name 
+	printf "$info" 
+}
+
+# in 1: level
+# in 2: info
+# Desc:
+function print()
+{
+	info=$2
+
+	printf "$info" 
 }
 
 function show_sh_begin_banner()
@@ -70,6 +98,7 @@ function show_sh_end_banner()
 	
 	debug $sh_name $level $info
 	#echo "################################################################################"
-	echo "--------------------------------------------------------------------------------"
+	#echo "--------------------------------------------------------------------------------"
+	echo "................................................................................"
 	echo
 }
