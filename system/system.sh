@@ -9,32 +9,10 @@ PROCESS_DIR=$CURRENT_PATH/process
 MODULES_DIR=$CURRENT_PATH/modules
 system_block
 
-function show_sh_begin_banner1()
-{
-	sh_name=$1
-	
-	echo
-	#echo ">>>>>>>>>>>>>>>>>>>> $sh_name begin..."
-	echo "################################################################################"
-	printf "[%-15s] " $sh_name 
-	echo "start >>>>>>>>>>"
-	echo
-}
 
-function show_sh_end_banner1()
-{
-	sh_name=$1
-	
-	echo
-	#echo "<<<<<<<<<<<<<<<<<<<< $sh_name end..."
-	printf "[%-15s] " $sh_name 
-	echo "end <<<<<<<<<<"
-	echo
-}
-
-LEVEL_INFO=3
+LEVEL_INFO=1
 LEVEL_ERROR=2
-LEVEL_FATAL=1
+LEVEL_FATAL=3
 
 # in 1: shell script name
 # in 2: level
@@ -87,7 +65,7 @@ function show_sh_begin_banner()
 	echo
 	#echo "################################################################################"
 	echo "--------------------------------------------------------------------------------"
-	debug $sh_name $level $info
+	print_ln $sh_name $level $info
 }
 
 function show_sh_end_banner()
@@ -96,7 +74,7 @@ function show_sh_end_banner()
 	level=1
 	info="end!!!"
 	
-	debug $sh_name $level $info
+	print_ln $sh_name $level $info
 	#echo "################################################################################"
 	#echo "--------------------------------------------------------------------------------"
 	echo "................................................................................"

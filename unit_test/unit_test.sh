@@ -1,30 +1,33 @@
 #!/bin/sh
 
-source system.sh
-
-
-show_sh_begin_banner $0
-
-
+source debug.sh
 source test_file.sh
 
-:<<UNIT_TEST_1
-unit_test_arr=(
-	test_file_all
+#Global define, should be unique in system
+unit_test_func_index="null"
+unit_test_func_arr="null"
+unit_test_func_iterator="null"
+
+show_sh_begin_banner
+
+#Test list
+unit_test_func_arr=(
+	test_file_all_funcs
 )
 
-set -xv
-for item in ${unit_test_arr[*]}  
+unit_test_func_index=1
+for unit_test_func_iterator in ${unit_test_func_arr[*]}  
 do  
-	print_procx LEVEL_INFO "func: ${item}"
-	echo ${item}
-	${item}
+	print_head LEVEL_INFO "list $unit_test_func_index: ${unit_test_func_iterator} begin...\n"
+	${unit_test_func_iterator}
 	if [ $? -eq 0 ];then
-		printx LEVEL_INFO " ... failed\n"
+		print_head LEVEL_INFO "list $unit_test_func_index: ${unit_test_func_iterator} failed!!!\n"
 	else
-		printx ERROR_INFO " ... passed\n"
+		print_head ERROR_INFO "list $unit_test_func_index: ${unit_test_func_iterator} passed...\n"
 	fi
+	
+	let unit_test_func_index=$unit_test_func_index+1
 done 
-UNIT_TEST_1
 
-show_sh_end_banner $0
+
+show_sh_end_banner

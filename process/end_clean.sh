@@ -1,10 +1,10 @@
 #!/bin/sh
 
-source system.sh
+source debug.sh
 
 
-show_sh_begin_banner $0
+show_sh_begin_banner
 
-debug $0 1 test
+print_ln 1 test
 
-show_sh_end_banner $0
+show_sh_end_banner

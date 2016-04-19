@@ -14,6 +14,7 @@ LIBRARY_DIR_COMMON=$CURRENT_PATH/library/common
 PROCESS_DIR=$CURRENT_PATH/process
 MODULES_DIR=$CURRENT_PATH/modules
 RUNNING_DIR=$CURRENT_PATH/running
+TOOLS_DIR=$CURRENT_PATH/tools
 
 UNIT_TEST_DIR=unit_test
 UINT_TEST_SYSTEM_DIR=$UNIT_TEST_DIR/system
@@ -30,9 +31,11 @@ UNIT_TEST_DIR_ALL=$UINT_TEST_SYSTEM_DIR:$UINT_TEST_LIBRARY_DIR:$UINT_TEST_LIBRAR
 export PATH=$PATH:$SYSTEM_DIR:$LIBRARY_DIR:$LIBRARY_DIR_COMMON:$PROCESS_DIR:$UNIT_TEST_DIR_ALL
 #echo $PATH
 
-source system/system.sh
 
-show_sh_begin_banner $0
+
+source debug.sh
+
+show_sh_begin_banner
 
 
 
@@ -40,7 +43,6 @@ show_sh_begin_banner $0
 #find . ! -path "*git*" -type f | sed -i 's/^M//'
 
 sh $UNIT_TEST_DIR/unit_test.sh
-exit
 
 cd process
 
@@ -54,4 +56,4 @@ sh end_clean.sh
 
 
 
-show_sh_end_banner $0
+show_sh_end_banner
