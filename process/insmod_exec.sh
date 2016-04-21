@@ -2,7 +2,7 @@
 
 source debug.sh
 source file.sh
-#source partition_converter.sh
+source module_conf_parser.sh
 
 MODULES_DIRX=$1
 
@@ -13,53 +13,18 @@ KS_FORMAT="ks:mode:destination:source_file"
 #If object=iso, ...
 
 #@in  1: one line of insmod.conf
-#@out 2: object
-function get_ojcect_from_file
+function parse_insmod_conf_line()
 {
-	line=$1
+	object="null"
 	
-	#object=`echo $line | awk -F ":" '{print $1}'`
-	#eval $2=`echo $line | awk -F ":" '{print $1}'`
+	print_ln LEVEL_INFO "func:$FUNCNAME,$line"
 	
-	#eval $2="$object"
-	#eval $2=`echo ks`
-	#return 1
-}
-
-#@in  1: one line of insmod.conf
-#@out 2: mode
-#@out 3: destination
-#@out 4: source file
-function get_ks_params
-{
-	line=$1
-	
-	object=`echo $line | awk -F ":" '{print $1}'`
-	mode=`echo $line | awk -F ":" '{print $2}'`
-	destination=`echo $line | awk -F ":" '{print $3}'`
-	source_file=`echo $line | awk -F ":" '{print $4}'`
-	
-	eval $2=$mode
-	eval $3=$destination
-	eval $4=$source_file
-	return 1
-}
-
-#@in  1: one line of insmod.conf coincide with KS_FORMAT 
-function do_ks_process()
-{
-	line=$1
-	mode="null"
-	destination="null"
-	source_file="null"
-	
-	print_ln LEVEL_INFO "$FUNCNAME,$line"
-	
-	get_ks_params line mode destination source_file
-	
-	print_ln LEVEL_INFO "$FUNCNAME,$mode,$destination,$source_file"
-	
-	echo "xxxxxxxxxxxxxxxxxxxxxx"
+	get_ojcect_from_conf_line $line object
+	if [ $object = "ks" ];then
+		insmod_ks_exec.sh $line
+	else
+		echo 
+	fi
 }
 
 #@in  1: one line of insmod.conf
@@ -68,7 +33,7 @@ function parse_insmod_conf()
 	file=$1
 	index=1
 	
-	print_ln LEVEL_INFO "$FUNCNAME,$file"
+	print_ln LEVEL_INFO "func:$FUNCNAME,$file"
 	
 	while read line
 	do	
@@ -77,13 +42,9 @@ function parse_insmod_conf()
 		elif [[ $line = "" ]];then
 			continue #Do nothing
 		fi
-		print_ln LEVEL_INFO "line $index: $line"
-		#object=`get_ojcect_from_file $line`
-		#if [ $object = "ks" ];then
-		#	do_ks_process $line
-		#else
-		#	echo 
-		#fi
+		
+		parse_insmod_conf_line $line
+		
 		let index=$index+1
 	done < $file
 }

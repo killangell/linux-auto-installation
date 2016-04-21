@@ -7,6 +7,8 @@ test_file_func_index="null"
 test_file_func_arr="null"
 test_file_func_iterator="null"
 
+UNIT_TEST_TMP_DIR=$RUNNING_DIR/unit_test
+
 #set -xv
 #@out 1: true(1)/false(0)
 function test_is_file_exist_1()
