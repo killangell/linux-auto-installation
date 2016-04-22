@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #@in  1: file_path
-#@out 2: result(true/false)
+#return: result(true/false)
 function is_file_exist()
 {
 	file_path=$1
@@ -14,9 +14,20 @@ function is_file_exist()
 }
 
 #@in  1: file_path
-#@out 1: count
-#Desc  : include "^#" line and "blank" line
-#function get_file_all_line_count()
+#return: result(true/false)
+#Desc  : Starting with "^#" line and "blank" line are useless
+function is_useless_line()
+{
+	if [[ $line = *#* ]];then
+		return 1
+	elif [[ $line = "" ]];then
+		return 1
+	elif [[ $line = "\n" ]];then
+		return 1
+	fi
+	
+	return 0
+}
 
 #@in  1: file_path
 #@out 1: count

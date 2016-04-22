@@ -5,6 +5,7 @@ source file.sh
 source module_conf_parser.sh
 
 KS_CONF_LINE=$1
+MODULES_OUTPUT_DIR=$2
 
 KS_FORMAT="ks:mode:destination:source_file"
 
@@ -16,7 +17,7 @@ KS_FORMAT="ks:mode:destination:source_file"
 #@in  1: one line of insmod.conf coincide with KS_FORMAT 
 function do_ks_process()
 {
-	line=$1
+	line=$KS_CONF_LINE
 	mode="null"
 	destination="null"
 	source_file="null"
@@ -27,11 +28,11 @@ function do_ks_process()
 	
 	print_ln LEVEL_INFO "func:$FUNCNAME,$mode,$destination,$source_file"
 	
-	print_ln LEVEL_INFO "xxxxxxxxxxxxxxxxxxxxxx"
+	insmod_ks_partition_exec.sh $source_file $MODULES_OUTPUT_DIR
 }
 
 show_sh_begin_banner
 
-do_ks_process $KS_CONF_LINE
+do_ks_process $KS_CONF_LINE $MODULES_OUTPUT_DIR
 
 show_sh_end_banner

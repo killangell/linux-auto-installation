@@ -38,10 +38,50 @@ function test_is_file_exist_2()
 	return 1 
 }
 
+#@out 1: true(1)/false(0)
+function test_is_useless_line()
+{
+	line="#This is a useless line"
+	expect_result=1
+	
+	is_useless_line $line
+	if [ $? -ne $expect_result ];then
+		return 0 
+	fi
+	
+	
+	line=""
+	expect_result=1
+	
+	is_useless_line $line
+	if [ $? -ne $expect_result ];then
+		return 0 
+	fi
+	
+	line="\n"
+	expect_result=1
+	
+	is_useless_line $line
+	if [ $? -ne $expect_result ];then
+		return 0 
+	fi
+	
+	line="This is a useful line"
+	expect_result=0
+	
+	is_useless_line $line
+	if [ $? -ne $expect_result ];then
+		return 0 
+	fi
+	
+	return 1
+}
+
 #Test list
 test_file_func_arr=(
 	test_is_file_exist_1
 	test_is_file_exist_2
+	test_is_useless_line
 )
 
 function test_file_all_funcs()
