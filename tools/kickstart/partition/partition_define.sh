@@ -75,6 +75,20 @@ pt_fs_arr=( #Default partition size
 )
 
 
+#@out 1: dest drive
+function get_dest_drive()
+{
+	eval $1=$dest_drive	
+	return 1
+}
+
+#@in  1: dest drive
+function set_dest_drive()
+{
+	dest_drive=$1
+	return 1
+}
+
 #@in  1: partition name
 #@out 2: partition index
 function get_pt_name_index()
@@ -172,7 +186,7 @@ function set_partition_info_by_index()
 #@in  1: partition name
 #@out 2: partition size
 #@out 3: partition locate
-#@out 3: partition filesystem type
+#@out 4: partition filesystem type
 function get_partition_info_by_name()
 {
 	name=$1

@@ -10,6 +10,42 @@ test_partition_define_func_iterator="null"
 UNIT_TEST_TMP_DIR=$RUNNING_DIR/unit_test
 
 #set -xv
+
+#return: true(1)/false(0)
+function test_get_dest_drive()
+{
+	expect="sda"
+	real="null"
+	
+	get_dest_drive real
+	
+	if [ $expect != $real ];then
+		return 0
+	fi
+	
+	return 1
+}
+
+#return: true(1)/false(0)
+function test_set_dest_drive()
+{
+	expect="hda"
+	real="null"
+	old_drive="null"
+	
+	get_dest_drive old_drive
+	set_dest_drive $expect
+	get_dest_drive real
+	#Set to default
+	set_dest_drive $old_drive
+	
+	if [ $expect != $real ];then
+		return 0
+	fi
+	
+	return 1
+}
+
 #return: true(1)/false(0)
 function test_get_pt_name_index()
 {
@@ -206,7 +242,6 @@ function test_set_partition_info_by_index_1()
 #return: true(1)/false(0)
 function test_get_partition_info_by_name_1()
 {
-	index=100
 	name="efi"
 	
 	expect_size="200M"
@@ -234,7 +269,6 @@ function test_get_partition_info_by_name_1()
 #return: true(1)/false(0)
 function test_get_partition_info_by_name_2()
 {
-	index=100
 	name="home"
 	
 	expect_size="20G"
@@ -262,7 +296,6 @@ function test_get_partition_info_by_name_2()
 #return: true(1)/false(0)
 function test_get_partition_info_by_name_3()
 {
-	index=100
 	name="data"
 	
 	expect_size="0"
@@ -292,7 +325,6 @@ function test_get_partition_info_by_name_3()
 #return: true(1)/false(0)
 function test_get_partition_info_by_name_4()
 {
-	index=100
 	name="xxx"
 	
 	expect_size="null"
@@ -320,7 +352,6 @@ function test_get_partition_info_by_name_4()
 #return: true(1)/false(0)
 function test_set_partition_info_by_name_1()
 {
-	index=100
 	name="data"
 	
 	expect_size="3G"
@@ -357,6 +388,8 @@ function test_set_partition_info_by_name_1()
 
 #Test list
 test_partition_define_func_arr=(
+	test_get_dest_drive
+	test_set_dest_drive
 	test_get_pt_name_index
 	test_is_valid_partition_index
 	test_get_partition_info_by_index_1

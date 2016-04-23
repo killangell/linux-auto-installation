@@ -7,7 +7,8 @@ test_disk_func_index="null"
 test_disk_func_arr="null"
 test_disk_func_iterator="null"
 
-UNIT_TEST_LIB_COM_DIR=$RUNNING_DIR/unit_test/library/common
+UNIT_TEST_DIR=$RUNNING_DIR/unit_test/library/common
+mkdir -p $UNIT_TEST_DIR
 
 #set -xv
 #@out 1: true(1)/false(0)

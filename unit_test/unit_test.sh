@@ -6,6 +6,7 @@ source test_utils.sh
 source test_disk.sh
 source test_module_conf_parser.sh
 source test_partition_define.sh
+source test_partition_conf_parser.sh
 
 #Global define, should be unique in system
 unit_test_func_index="null"
@@ -21,6 +22,7 @@ unit_test_func_arr=(
 	test_utils_all_funcs
 	test_module_conf_parser_all_funcs
 	test_partition_define_all_funcs
+	test_partition_conf_parser_all_funcs
 	test_disk_all_funcs
 )
 
