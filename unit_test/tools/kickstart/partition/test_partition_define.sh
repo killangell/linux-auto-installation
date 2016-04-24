@@ -12,6 +12,39 @@ UNIT_TEST_TMP_DIR=$RUNNING_DIR/unit_test
 #set -xv
 
 #return: true(1)/false(0)
+function test_get_partition_mount_point_by_name()
+{
+	name="swap"
+	expect="swap"
+	real="null"
+	
+	get_partition_mount_point_by_name $name real
+	if [ $expect != $real ];then
+		return 0
+	fi	
+	
+	name="efi"
+	expect="/boot/efi"
+	real="null"
+	
+	get_partition_mount_point_by_name $name real
+	if [ $expect != $real ];then
+		return 0
+	fi
+	
+	name="data"
+	expect="/data"
+	real="null"
+	
+	get_partition_mount_point_by_name $name real
+	if [ $expect != $real ];then
+		return 0
+	fi
+	
+	return 1
+}
+
+#return: true(1)/false(0)
 function test_get_dest_drive()
 {
 	expect="sda"
@@ -388,6 +421,7 @@ function test_set_partition_info_by_name_1()
 
 #Test list
 test_partition_define_func_arr=(
+	test_get_partition_mount_point_by_name
 	test_get_dest_drive
 	test_set_dest_drive
 	test_get_pt_name_index

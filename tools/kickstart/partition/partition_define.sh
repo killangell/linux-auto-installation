@@ -1,6 +1,6 @@
 #!/bin/sh
 
-dest_drive=sda #Default value. OS will be intstalled on it.
+db_dest_drive=sda #Default value. OS will be intstalled on it.
 pt_name_arr=( 
     efi				#0 /boot/efi
     boot			#1 /boot
@@ -74,18 +74,51 @@ pt_fs_arr=( #Default partition size
 	#lvm  			#9 For preload files
 )
 
+#@in  $1: partition name
+#@out $2: partition mount point
+function get_partition_mount_point_by_name()
+{
+	pt_name=$1
+	partition="null"
+	
+	if [[ $pt_name = *swap* ]];then
+		partition="swap"
+	elif  [[ $pt_name = *efi* ]];then
+		partition="/boot/efi"
+	elif  [[ $pt_name = *boot* ]];then
+		partition="/boot"
+	elif  [[ $pt_name = *root* ]];then
+		partition="/"
+	elif  [[ $pt_name = *var* ]];then
+		partition="/var"
+	elif  [[ $pt_name = *home* ]];then
+		partition="/home"
+	elif  [[ $pt_name = *tmp* ]];then
+		partition="/tmp"
+	elif  [[ $pt_name = *opt* ]];then
+		partition="/opt"
+	elif  [[ $pt_name = *usr* ]];then
+		partition="/usr"
+	elif  [[ $pt_name = *data* ]];then
+		partition="/data"
+	fi
+	
+	eval $2=$partition
+	
+	return 1
+}
 
 #@out 1: dest drive
 function get_dest_drive()
 {
-	eval $1=$dest_drive	
+	eval $1=$db_dest_drive	
 	return 1
 }
 
 #@in  1: dest drive
 function set_dest_drive()
 {
-	dest_drive=$1
+	db_dest_drive=$1
 	return 1
 }
 
