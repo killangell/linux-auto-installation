@@ -1,6 +1,7 @@
 #!/bin/sh
 
 source partition_define.sh
+source disk.sh
 
 #@in  1: Partition name
 #@in  2: Partition size	
@@ -98,3 +99,4 @@ function get_ks_bootloader_string()
 	
 	return 1
 }
+

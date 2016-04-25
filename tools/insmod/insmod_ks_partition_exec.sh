@@ -89,6 +89,74 @@ function do_partition_sizing()
 	return 1
 }
 
+#@in  1: Input ks partition file
+#@out 2: Output mops pattition file 
+function get_mops_phase_partition_code()
+{
+	ks_partition_file=$1
+	mops_phase_partition_file=$2
+	
+	print_ln LEVEL_INFO "func:$FUNCNAME"
+	print_ln LEVEL_INFO "ks_partition_file=$ks_partition_file"
+	print_ln LEVEL_INFO "mops_phase_partition_file=$mops_phase_partition_file"
+	
+	ks_partition_num=`cat $ks_partition_file | grep ^part | wc -l`
+	print_ln LEVEL_INFO "ks_partition_num=$ks_partition_num"
+
+	get_dest_drive dest_drive
+	
+	temp_string="parted -a opt /dev/$dest_drive -s mklabel gpt"
+	print_ln LEVEL_INFO "wr2file mops phase partition: $temp_string"					
+	echo "$temp_string" >> $mops_phase_partition_file
+	
+	start_pos=0
+	for((i=0;i<$ks_partition_num;i++));do
+		let end_pos=$start_pos+300
+		spos=$start_pos"MB"
+		epos=$end_pos"MB"
+		
+		temp_string="parted -a opt /dev/$dest_drive -s mkpart primary $spos $epos"
+		print_ln LEVEL_INFO "wr2file mops phase partition: $temp_string"					
+		echo "$temp_string" >> $mops_phase_partition_file
+	
+		start_pos=$end_pos
+	done
+
+	get_disk_size $dest_drive size unit
+	#echo size=$size,unit=$unit
+
+	#This partition is used to store ISO source file
+	let iso_partition_start=$size-10
+	spos=$iso_partition_start"GB"
+	
+	temp_string="parted -a opt /dev/$dest_drive -s mkpart primary $spos 100%"
+	print_ln LEVEL_INFO "wr2file mops phase partition: $temp_string"					
+	echo "$temp_string" >> $mops_phase_partition_file
+	
+	return 1
+}
+
+#@in  1: Mops pattition file 
+#@out 2: Partition number 
+function get_mops_phase_partition_num()
+{
+	mops_phase_partition_file=$1
+	mops_phase_partition_num=`cat $mops_phase_partition_file | grep ^parted | wc -l`
+	
+	#echo mops_phase_partition_num=$mops_phase_partition_num
+	eval $2=$mops_phase_partition_num
+	print_ln LEVEL_INFO "func:$FUNCNAME mops_phase_partition_num=$mops_phase_partition_num"
+	
+	return 1
+}
+
+#@in  1: Input ks partition file
+#@out 2: Output mops pattition file 
+function get_ks_pre_phase_partition_code()
+{
+	echo
+}
+
 #@in  1: Partition conf from module
 #@in  2: Output dir
 #@out 3: Output file
@@ -100,10 +168,12 @@ function do_partition_action()
 	
 	ks_segments_partition_file=$ks_segments_dir/partition.out
 	ks_segments_harddrive_file=$ks_segments_dir/harddrive.out
-	ks_segments_bootloader_file=$ks_segments_dir/bootloader.out		
+	ks_segments_bootloader_file=$ks_segments_dir/bootloader.out	
+	mops_partitioin_code_file=$ks_segments_dir/mops_partition_code.out		
 	rm -rf $ks_segments_partition_file
 	rm -rf $ks_segments_harddrive_file
 	rm -rf $ks_segments_bootloader_file
+	rm -rf $mops_partitioin_code_file
 	
 	#The biggest partition shoule be placed at last of the partition segment.
 	max_partition_name="null"
@@ -129,11 +199,11 @@ function do_partition_action()
 	
 	temp_string="clearpart --all --drives=$dest_drive"
 	print_ln LEVEL_INFO "wr2file partition: $temp_string"
-	echo "temp_string" >> $ks_segments_partition_file
+	echo "$temp_string" >> $ks_segments_partition_file
 	
 	temp_string="ignoredisk --only-use=$dest_drive"
 	print_ln LEVEL_INFO "wr2file partition: $temp_string"
-	echo "temp_string" >> $ks_segments_partition_file
+	echo "$temp_string" >> $ks_segments_partition_file
 	
 	#echo "clearpart --all --drives=$dest_drive" >> $ks_segments_partition_file
 	#echo "ignoredisk --only-use=$dest_drive" >> $ks_segments_partition_file
@@ -165,11 +235,11 @@ function do_partition_action()
 				if [ $lvm_created_partition_flag = "false" ];then
 					temp_string="part pv.008019 --grow --size=1"
 					print_ln LEVEL_INFO "wr2file partition: $temp_string"
-					echo "temp_string" >> $ks_segments_partition_file
+					echo "$temp_string" >> $ks_segments_partition_file
 	
 					temp_string="volgroup $lvm_vg_name --pesize=4096 pv.008019"
 					print_ln LEVEL_INFO "wr2file partition: $temp_string"
-					echo "temp_string" >> $ks_segments_partition_file
+					echo "$temp_string" >> $ks_segments_partition_file
 					
 					#echo "part pv.008019 --grow --size=1" >> $ks_segments_partition_file
 					#echo "volgroup $lvm_vg_name --pesize=4096 pv.008019" >> $ks_segments_partition_file
@@ -197,8 +267,31 @@ function do_partition_action()
 		print_ln LEVEL_INFO "wr2file partition: $temp_string"
 		echo "$temp_string" >> $ks_segments_partition_file
 	fi
+	print_ln LEVEL_INFO "Check partition file: $ks_segments_partition_file"
 	
-	#Step 2: Create ks-segments partition
+	get_dest_drive dest_drive
+
+	#Step 2: Create ks-segments harddrive	
+	mops_phase_partition_file=$mops_partitioin_code_file
+	
+	get_mops_phase_partition_code $ks_segments_partition_file $mops_phase_partition_file
+	
+	get_mops_phase_partition_num $mops_phase_partition_file prel_parted_num
+	let prel_iso_partition_num=$prel_parted_num-1
+	harddrive_str="$dest_drive$prel_iso_partition_num"
+	
+	get_ks_harddrive_string $harddrive_str temp_string
+	temp_string=$(echo $temp_string | sed 's/+/ /g')
+	print_ln LEVEL_INFO "wr2file harddrive: $temp_string"
+	echo "$temp_string" >> $ks_segments_harddrive_file
+	print_ln LEVEL_INFO "Check harddrive file: $ks_segments_harddrive_file"
+	
+	#Step 3: Create ks-segments bootloader
+	get_ks_bootloader_string $dest_drive temp_string
+	temp_string=$(echo $temp_string | sed 's/+/ /g')
+	print_ln LEVEL_INFO "wr2file bootloader: $temp_string"
+	echo "$temp_string" >> $ks_segments_bootloader_file
+	print_ln LEVEL_INFO "Check bootloader file: $ks_segments_bootloader_file"
 	
 	return 1
 }

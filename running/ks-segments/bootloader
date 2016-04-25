@@ -1,1 +1,0 @@
-bootloader --location=partition --driveorder=sda --append="crashkernel=auto rhgb quiet"
