@@ -150,11 +150,46 @@ function get_mops_phase_partition_num()
 	return 1
 }
 
-#@in  1: Input ks partition file
-#@out 2: Output mops pattition file 
-function get_ks_pre_phase_partition_code()
+#@in  1: Destination drive
+#@in  2: Input mops pattition file
+#@out 3: Output ks-pre partition code 
+function get_ks_pre_phase_code()
 {
-	echo
+	dest_drive=$1
+	mops_phase_partition_codex=$2
+	ks_pre_partition_codex=$3
+	mops_phase_partition_num="null"
+	
+	get_mops_phase_partition_num $mops_phase_partition_codex mops_phase_partition_num
+	let delete_mops_phase_partition_num=$mops_phase_partition_num-2
+	print_ln LEVEL_INFO "func:$FUNCNAME delete_mops_phase_partition_num=$delete_mops_phase_partition_num"	
+	for((i=0;i<$delete_mops_phase_partition_num;i++));do
+		let delete_partition_index=$i+1
+		temp_string="parted /dev/$dest_drive rm $delete_partition_index"
+		print_ln LEVEL_INFO "wr2file ks-pre partition code: $temp_string"					
+		echo "$temp_string" >> $ks_pre_partition_codex
+	done
+}
+
+#@in  1: Destination drive
+#@in  2: Input mops pattition file
+#@out 3: Output ks-pre partition code 
+function get_ks_pre_phase_code2()
+{
+	dest_drive=$1
+	mops_phase_partition_codex=$2
+	ks_pre_partition_codex=$3
+	mops_phase_partition_num="null"
+	
+	get_mops_phase_partition_num $mops_phase_partition_codex mops_phase_partition_num
+	let delete_mops_phase_partition_num=$mops_phase_partition_num-2
+	print_ln LEVEL_INFO "func:$FUNCNAME delete_mops_phase_partition_num=$delete_mops_phase_partition_num"	
+	for((i=0;i<$delete_mops_phase_partition_num;i++));do
+		let delete_partition_index=$i+1
+		temp_string="parted /dev/$dest_drive rm $delete_partition_index"
+		print_ln LEVEL_INFO "wr2file ks-pre partition code: $temp_string"					
+		echo "$temp_string" >> $ks_pre_partition_codex
+	done
 }
 
 #@in  1: Partition conf from module
@@ -170,10 +205,12 @@ function do_partition_action()
 	ks_segments_harddrive_file=$ks_segments_dir/harddrive.out
 	ks_segments_bootloader_file=$ks_segments_dir/bootloader.out	
 	mops_partitioin_code_file=$ks_segments_dir/mops_partition_code.out		
+	ks_pre_partitioin_code_file=$ks_segments_dir/pre_partition_code.out		
 	rm -rf $ks_segments_partition_file
 	rm -rf $ks_segments_harddrive_file
 	rm -rf $ks_segments_bootloader_file
 	rm -rf $mops_partitioin_code_file
+	rm -rf $ks_pre_partitioin_code_file
 	
 	#The biggest partition shoule be placed at last of the partition segment.
 	max_partition_name="null"
@@ -292,6 +329,12 @@ function do_partition_action()
 	print_ln LEVEL_INFO "wr2file bootloader: $temp_string"
 	echo "$temp_string" >> $ks_segments_bootloader_file
 	print_ln LEVEL_INFO "Check bootloader file: $ks_segments_bootloader_file"
+	
+	#Step 4: Create ks-pre code
+	get_ks_pre_phase_code $dest_drive $mops_partitioin_code_file $ks_pre_partitioin_code_file
+	
+	#Step 4: Create ks-post code
+	
 	
 	return 1
 }

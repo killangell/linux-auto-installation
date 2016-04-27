@@ -8,6 +8,7 @@ source test_module_conf_parser.sh
 source test_partition_define.sh
 source test_partition_conf_parser.sh
 source test_partition_ks_converter.sh
+source test_ks_template_handler.sh
 
 #Global define, should be unique in system
 unit_test_func_index="null"
@@ -26,6 +27,7 @@ unit_test_func_arr=(
 	test_partition_define_all_funcs
 	test_partition_conf_parser_all_funcs
 	test_partition_ks_converter_all_funcs
+	test_ks_template_handler_all_funcs
 )
 
 unit_test_func_index=1
