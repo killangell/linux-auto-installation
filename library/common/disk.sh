@@ -49,3 +49,63 @@ function get_memory_size()
 	
 	return 1 
 }
+
+#@in  1: Drive name		(e.g.: sda/sdb/hda/hdb)
+#@out 2: Partition count
+function get_disk_partition_count()
+{
+	drive_name=$1
+	partition_count="null"
+	
+	partition_count=`parted /dev/$drive_name p | awk '!/^$/' | awk 'n==1{print}$0~/Number/{n=1}' | wc -l`
+
+	eval $2=$partition_count
+	
+	return 1
+}
+
+#@in  1: Cmd that can output partition info (e.g.: "parted /dev/sda p")
+#@out 2: Partition count
+function parse_disk_partition_count_from_cmd()
+{
+	cmd=$1
+	partition_count="null"
+	
+	partition_count=`$cmd | awk '!/^$/' | awk 'n==1{print}$0~/Number/{n=1}' | wc -l`
+
+	eval $2=$partition_count
+	
+	return 1
+}
+
+#@in  1: Drive name		(e.g.: sda/sdb/hda/hdb)
+#@in  2: Partition index
+#@out 3: End size
+function get_disk_partition_end_size()
+{
+	drive_name=$1
+	partition_index=$2
+	end_size="null"
+	#set -x
+	end_size=`parted /dev/$drive_name p | awk '!/^$/' | awk 'n==1{print}$0~/Number/{n=1}' | awk '{print $3}' | awk "NR==$partition_index"`
+	#set +x
+	eval $3=$end_size
+	
+	return 1
+}
+
+#@in  1: Cmd that can output partition info (e.g.: "parted /dev/sda p")
+#@in  2: Partition index
+#@out 3: End size
+function parse_disk_partition_end_size_from_cmd()
+{
+	cmd=$1
+	partition_index=$2
+	end_size="null"
+	#set -x
+	end_size=`$cmd | awk '!/^$/' | awk 'n==1{print}$0~/Number/{n=1}' | awk '{print $3}' | awk "NR==$partition_index"`
+	#set +x
+	eval $3=$end_size
+	
+	return 1
+}

@@ -14,6 +14,12 @@ KS_SEGMENTS_DIR=$RUNNING_DIR/ks-segments
 
 KS_FORMAT="ks:mode:destination:source_file"
 
+g_max_partition_name="null"
+g_max_partition_size="null"
+g_max_partition_loca="null"
+g_max_partition_fs_type="null"
+g_mops_phase_partition_num="null"
+	
 #If object=ks, the format shoule be KS_FORMAT
 #If object=inirtd, ...
 #If object=iso, ...
@@ -133,6 +139,8 @@ function get_mops_phase_partition_code()
 	print_ln LEVEL_INFO "wr2file mops phase partition: $temp_string"					
 	echo "$temp_string" >> $mops_phase_partition_file
 	
+	let g_mops_phase_partition_num=$ks_partition_num+1
+	
 	return 1
 }
 
@@ -169,6 +177,28 @@ function get_ks_pre_phase_code()
 		print_ln LEVEL_INFO "wr2file ks-pre partition code: $temp_string"					
 		echo "$temp_string" >> $ks_pre_partition_codex
 	done
+}
+
+
+function get_nolvm_partition_resizing_code()
+{
+	echo
+}
+
+function get_lvm_partition_resizing_code()
+{
+	echo
+}
+
+function get_ks_post_phase_code()
+{
+	if [ "$max_partition_loca" = "lvm" ]; then
+		get_lvm_partition_resizing_code
+	else
+		get_nolvm_partition_resizing_code
+	fi
+	
+	return 1
 }
 
 #@in  1: Destination drive
@@ -213,6 +243,7 @@ function do_partition_action()
 	rm -rf $ks_pre_partitioin_code_file
 	
 	#The biggest partition shoule be placed at last of the partition segment.
+	#Set as global param
 	max_partition_name="null"
 	max_partition_size="null"
 	max_partition_loca="null"
@@ -265,6 +296,11 @@ function do_partition_action()
 			max_partition_size=$exec_pt_size
 			max_partition_loca=$exec_pt_loca
 			max_partition_fs_type=$exec_pt_fs_type
+			
+			g_max_partition_name=$exec_pt_name
+			g_max_partition_size=$exec_pt_size
+			g_max_partition_loca=$exec_pt_loca
+			g_max_partition_fs_type=$exec_pt_fs_type
 		else
 			if [ $exec_pt_loca = "disk" ];then
 				get_ks_disk_partition_string $exec_pt_name $exec_pt_size $exec_pt_fs_type temp_string
@@ -333,7 +369,7 @@ function do_partition_action()
 	#Step 4: Create ks-pre code
 	get_ks_pre_phase_code $dest_drive $mops_partitioin_code_file $ks_pre_partitioin_code_file
 	
-	#Step 4: Create ks-post code
+	#Step 5: Create ks-post code
 	
 	
 	return 1
