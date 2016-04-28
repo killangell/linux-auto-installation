@@ -11,6 +11,8 @@ source module_conf_parser.sh
 KS_PARTITION_CONF_LINE=$1
 MODULES_OUTPUT_DIR=$2
 KS_SEGMENTS_DIR=$RUNNING_DIR/ks-segments
+TEMP_DIR=/mnt/disk
+PRELOAD_DIR=/mnt/preload
 
 KS_FORMAT="ks:mode:destination:source_file"
 
@@ -19,6 +21,7 @@ g_max_partition_size="null"
 g_max_partition_loca="null"
 g_max_partition_fs_type="null"
 g_mops_phase_partition_num="null"
+g_lvm_vgname="null"
 	
 #If object=ks, the format shoule be KS_FORMAT
 #If object=inirtd, ...
@@ -170,6 +173,7 @@ function get_ks_pre_phase_code()
 	
 	get_mops_phase_partition_num $mops_phase_partition_codex mops_phase_partition_num
 	let delete_mops_phase_partition_num=$mops_phase_partition_num-2
+	let last_mops_phase_partition_num=$mops_phase_partition_num-1
 	print_ln LEVEL_INFO "func:$FUNCNAME delete_mops_phase_partition_num=$delete_mops_phase_partition_num"	
 	for((i=0;i<$delete_mops_phase_partition_num;i++));do
 		let delete_partition_index=$i+1
@@ -177,49 +181,210 @@ function get_ks_pre_phase_code()
 		print_ln LEVEL_INFO "wr2file ks-pre partition code: $temp_string"					
 		echo "$temp_string" >> $ks_pre_partition_codex
 	done
+	
+	full_device="/dev/$dest_drive$last_mops_phase_partition_num"
+	
+	temp_string="mkdir -p $TEMP_DIR $PRELOAD_DIR"
+	print_ln LEVEL_INFO "wr2file ks-pre partition code: $temp_string"					
+	echo "$temp_string" >> $ks_pre_partition_codex	
+	
+	temp_string="mount $full_device $TEMP_DIR"
+	print_ln LEVEL_INFO "wr2file ks-pre partition code: $temp_string"					
+	echo "$temp_string" >> $ks_pre_partition_codex	
+	
+	temp_string="cp $TEMP_DIR/rc.local $PRELOAD_DIR"
+	print_ln LEVEL_INFO "wr2file ks-pre partition code: $temp_string"					
+	echo "$temp_string" >> $ks_pre_partition_codex
+	
+	temp_string="umount $full_device -l"
+	print_ln LEVEL_INFO "wr2file ks-pre partition code: $temp_string"					
+	echo "$temp_string" >> $ks_pre_partition_codex
+
+	return 1
 }
 
-
+#@in  1: Destination drive
+#@out 2: Output ks-post partition code
 function get_nolvm_partition_resizing_code()
 {
-	echo
-}
-
-function get_lvm_partition_resizing_code()
-{
-	echo
-}
-
-function get_ks_post_phase_code()
-{
-	if [ "$max_partition_loca" = "lvm" ]; then
-		get_lvm_partition_resizing_code
-	else
-		get_nolvm_partition_resizing_code
-	fi
+	print_ln LEVEL_INFO "func:$FUNCNAME g_mops_phase_partition_num=$g_mops_phase_partition_num"	
+	
+	delete_partition_index1=$g_mops_phase_partition_num
+	let delete_partition_index2=$g_mops_phase_partition_num-1
+	
+	dest_drive=$1	
+	ks_post_partition_codex=$2
+	
+	#Step 1:
+	second_last_end_size="null"
+	get_disk_partition_end_size "$dest_drive" "$delete_partition_index2" second_last_end_size
+	
+	print_ln LEVEL_INFO "partition_index=$delete_partition_index2,second_last_end_size=$second_last_end_size"	
+	
+	#Setp 2：	
+	temp_string="parted /dev/$dest_drive rm $delete_partition_index1"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+	
+	temp_string="parted /dev/$dest_drive rm $delete_partition_index2"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+	
+	#Setp 3:
+	temp_string="parted -a opt /dev/$dest_drive -s mkpart primary $second_last_end_size 100%"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+	
+	resize_device=$dest_drive$delete_partition_index2
+	temp_string="/sbin/e2fsck -p -f /dev/$resize_device"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex	
+	
+	temp_string="/sbin/resize2fs /dev/$resize_device"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
 	
 	return 1
 }
 
 #@in  1: Destination drive
-#@in  2: Input mops pattition file
-#@out 3: Output ks-pre partition code 
-function get_ks_pre_phase_code2()
+#@out 2: Output ks-post partition code
+#@out 3: Output rc.local kickoff code
+function get_lvm_partition_resizing_code()
 {
-	dest_drive=$1
-	mops_phase_partition_codex=$2
-	ks_pre_partition_codex=$3
-	mops_phase_partition_num="null"
+	dest_drive=$1	
+	ks_post_partition_codex=$2
+	kickoff_codex=$3
 	
-	get_mops_phase_partition_num $mops_phase_partition_codex mops_phase_partition_num
-	let delete_mops_phase_partition_num=$mops_phase_partition_num-2
-	print_ln LEVEL_INFO "func:$FUNCNAME delete_mops_phase_partition_num=$delete_mops_phase_partition_num"	
-	for((i=0;i<$delete_mops_phase_partition_num;i++));do
-		let delete_partition_index=$i+1
-		temp_string="parted /dev/$dest_drive rm $delete_partition_index"
-		print_ln LEVEL_INFO "wr2file ks-pre partition code: $temp_string"					
-		echo "$temp_string" >> $ks_pre_partition_codex
-	done
+	print_ln LEVEL_INFO "func:$FUNCNAME g_mops_phase_partition_num=$g_mops_phase_partition_num"	
+	
+	delete_partition_index1=$g_mops_phase_partition_num
+	let delete_partition_index2=$g_mops_phase_partition_num-1
+	
+	dest_drive=$1	
+	ks_post_partition_codex=$2
+	kickoff_file=$3
+	
+	pv_size="null"
+	pv_unit="null"
+	new_pv_size="null"
+	new_pv_unit="null"
+	
+	#Step 1:
+	second_last_end_size="null"
+	get_disk_partition_end_size "$dest_drive" "$delete_partition_index2" second_last_end_size
+	print_ln LEVEL_INFO "partition_index=$delete_partition_index2,second_last_end_size=$second_last_end_size"	
+	
+	get_pv_size "$dest_drive" "$delete_partition_index2" pv_size pv_unit
+	print_ln LEVEL_INFO "pv:$dest_drive$delete_partition_index2,pv_size=$pv_size,pv_unit=$pv_unit"
+	
+	get_disk_pv_capability "$dest_drive" "$delete_partition_index1" new_pv_size new_pv_unit
+	print_ln LEVEL_INFO "pv:$dest_drive$delete_partition_index1,new_pv_size=$new_pv_size,new_pv_unit=$new_pv_unit"
+	
+	#Setp 2：	
+	temp_string="parted /dev/$dest_drive rm $delete_partition_index1"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+	
+	temp_string="parted /dev/$dest_drive rm $delete_partition_index2"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+	
+	#Setp 3:
+	temp_string="parted -a opt /dev/$dest_drive -s mkpart primary $second_last_end_size 100%"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+	
+	temp_string="parted /dev/$dest_drive set $delete_partition_index2 LVM on"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+	
+	#set -x
+	#Setp 4:
+	resize_device=$dest_drive$delete_partition_index2
+	if [ "$pv_unit" = "$new_pv_unit" ];then
+		let total_size=$pv_size+$new_pv_size
+		total_unit="G"
+		if [ "$pv_unit" = "MiB" ];then
+			total_unit="M"
+		fi
+	elif [ "$pv_unit" = "GiB" ];then
+		let total_size=$pv_size*1000+$new_pv_size
+		total_unit="M"
+	elif [ "$pv_unit" = "MiB" ];then
+		let total_size=$pv_size+$new_pv_size*1000
+		total_unit="M"
+	fi
+	total_physize=$total_size$total_unit
+	#set +x
+	
+	temp_string="pvresize --setphysicalvolumesize $total_physize /dev/$resize_device"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+	
+	
+	lvm_full_resize_device="/dev/$g_lvm_vgname/lv_$g_max_partition_name"
+	
+	temp_string="lvresize -rl +100%FREE $lvm_full_resize_device"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+	
+	temp_string="dmsetup resume $lvm_full_resize_device"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+
+	###
+	temp_string="mv /mnt/sysimage/etc/rc.d/rc.local /mnt/sysimage/etc/rc.d/rc.local.back"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+	
+	temp_string="cp -rf $PRELOAD_DIR/rc.local /mnt/sysimage/etc/rc.d/"
+	print_ln LEVEL_INFO "wr2file ks-post partition code: $temp_string"					
+	echo "$temp_string" >> $ks_post_partition_codex
+	
+	###
+	temp_string="umount $lvm_full_resize_device -l >> /root/resize.log"
+	print_ln LEVEL_INFO "wr2file rc.local code: $temp_string"					
+	echo "$temp_string" >> $kickoff_file
+	
+	temp_string="/sbin/e2fsck -p -f $lvm_full_resize_device  >> /root/resize.log"
+	print_ln LEVEL_INFO "wr2file rc.local code: $temp_string"					
+	echo "$temp_string" >> $kickoff_file
+	
+	temp_string="/sbin/resize2fs $lvm_full_resize_device  >> /root/resize.log"
+	print_ln LEVEL_INFO "wr2file rc.local code: $temp_string"					
+	echo "$temp_string" >> $kickoff_file
+	
+	mount_point="null"
+	get_partition_mount_point_by_name $g_max_partition_name mount_point
+
+	temp_string="mount $lvm_full_resize_device $mount_point >> /root/resize.log"
+	print_ln LEVEL_INFO "wr2file rc.local code: $temp_string"					
+	echo "$temp_string" >> $kickoff_file
+	
+	temp_string="mv /etc/rc.d/rc.local /root/rc.local.todel"
+	print_ln LEVEL_INFO "wr2file rc.local code: $temp_string"					
+	echo "$temp_string" >> $kickoff_file
+	
+	temp_string="mv /etc/rc.d/rc.local.back /etc/rc.d/rc.local"
+	print_ln LEVEL_INFO "wr2file rc.local code: $temp_string"					
+	echo "$temp_string" >> $kickoff_file
+
+	return 1
+}
+
+#@in  1: Destination drive
+#@out 2: Output ks-post partition code
+#@out 3: Output rc.local kickoff code
+function get_ks_post_phase_code()
+{
+	if [ "$max_partition_loca" = "lvm" ]; then		
+		get_lvm_partition_resizing_code $1 $2 $3
+	else
+		get_nolvm_partition_resizing_code $1 $2
+	fi
+	
+	return 1
 }
 
 #@in  1: Partition conf from module
@@ -236,14 +401,17 @@ function do_partition_action()
 	ks_segments_bootloader_file=$ks_segments_dir/bootloader.out	
 	mops_partitioin_code_file=$ks_segments_dir/mops_partition_code.out		
 	ks_pre_partitioin_code_file=$ks_segments_dir/pre_partition_code.out		
+	ks_post_partitioin_code_file=$ks_segments_dir/post_partition_code.out	
+	kickoff_code_file=$ks_segments_dir/rc.local.out
 	rm -rf $ks_segments_partition_file
 	rm -rf $ks_segments_harddrive_file
 	rm -rf $ks_segments_bootloader_file
 	rm -rf $mops_partitioin_code_file
 	rm -rf $ks_pre_partitioin_code_file
+	rm -rf $ks_post_partitioin_code_file
+	rm -rf $kickoff_code_file
 	
 	#The biggest partition shoule be placed at last of the partition segment.
-	#Set as global param
 	max_partition_name="null"
 	max_partition_size="null"
 	max_partition_loca="null"
@@ -256,6 +424,7 @@ function do_partition_action()
 	temp_string="null"	
 	lvm_created_partition_flag="false"
 	lvm_vg_name="vg0"
+	g_lvm_vgname=$lvm_vg_name
 	
 	#Step 1: Create ks-segments partition
 	get_dest_drive dest_drive
@@ -368,9 +537,12 @@ function do_partition_action()
 	
 	#Step 4: Create ks-pre code
 	get_ks_pre_phase_code $dest_drive $mops_partitioin_code_file $ks_pre_partitioin_code_file
+	print_ln LEVEL_INFO "Check ks-pre file: $ks_pre_partitioin_code_file"
 	
 	#Step 5: Create ks-post code
-	
+	get_ks_post_phase_code $dest_drive $ks_post_partitioin_code_file $kickoff_code_file
+	print_ln LEVEL_INFO "Check ks-post file: $ks_post_partitioin_code_file"
+	print_ln LEVEL_INFO "Check rc.local file: $kickoff_code_file"
 	
 	return 1
 }

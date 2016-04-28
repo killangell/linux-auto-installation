@@ -179,6 +179,39 @@ Number  Start   End     Size    File system  Name     Flags
 	return 1
 }
 
+function test_parse_pv_size_from_cmd()
+{
+echo "  --- Physical volume ---
+  PV Name               /dev/sda2
+  VG Name               VolGroup
+  PV Size               499.51 GiB / not usable 3.00 MiB
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              127874
+  Free PE               0
+  Allocated PE          127874
+  PV UUID               VQsj11-jRL7-kOz1-8s2U-h9uG-gtA5-1BS95b" > $DISK_UNIT_TEST_DIR/$FUNCNAME.test
+
+	cmd="cat $DISK_UNIT_TEST_DIR/$FUNCNAME.test"
+  	drive_name="sda"	
+	partition_index=2
+	expect_size="499"
+	expect_unit="GiB"
+	real_size="null"	
+	real_unit="null"	
+	parse_pv_size_from_cmd "$cmd" "$drive_name" "$partition_index" real_size real_unit
+	
+	if [ $expect_size -ne $real_size ];then
+		return 0
+	fi
+	
+	if [ $expect_unit != $real_unit ];then
+		return 0
+	fi
+	
+	return 1
+}
+
 #Test list
 test_disk_func_arr=(
 	test_parse_disk_size_string_1
@@ -188,6 +221,7 @@ test_disk_func_arr=(
 	test_parse_disk_partition_count_from_cmd
 	test_get_disk_partition_end_size
 	test_parse_disk_partition_end_size_from_cmd
+	test_parse_pv_size_from_cmd
 )
 
 function test_disk_all_funcs()
